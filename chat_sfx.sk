@@ -1,0 +1,98 @@
+options:
+    prefix: &4
+    name: Chat Sound Effects
+    author: KeirLoire
+    version: 1.0.0.0
+
+on load:
+    #Presets
+    set {chat.sfx::awoo} to "entity.wolf.howl"
+    set {chat.sfx::woof} to "entity.wolf.ambient"
+    set {chat.sfx::boom} to "entity.generic.explode"
+    set {chat.sfx::oof} to "entity.pig.death"
+    set {chat.sfx::meow} to "entity.cat.ambient"
+    set {chat.sfx::meh} to "entity.sheep.ambient"
+    set {chat.sfx::lol} to "entity.witch.ambient"
+    set {chat.sfx::haha} to "entity.witch.ambient"
+    set {chat.sfx::sad} to "entity.wolf.whine"
+    set {chat.sfx::yes} to "entity.villager.yes"
+    set {chat.sfx::no} to "entity.villager.no"
+    set {chat.sfx::hiss} to "entity.cat.hiss"
+    set {chat.sfx::what} to "entity.villager.trade"
+    set {chat.sfx::?} to "entity.villager.trade"
+    set {chat.sfx::spit} to "entity.llama.spit"
+    
+on chat:
+    loop {chat.sfx::*}:
+        if message contains "%loop-index%":
+            player command "/sfx %loop-value%"
+            stop loop
+        loop players:
+            if message contains "%loop-player%":
+                play sound "entity.player.levelup" at location of loop-player for loop-player
+
+command /sfx [<text>] [<text>] [<text>]:
+    trigger:
+        if arg-1 is not set:
+            if {soundeffect.mute::%player%} is true:
+                clear {soundeffect.mute::%player%}
+                message "&6Enabled chat sound effects."
+            else:
+                set {soundeffect.mute::%player%} to true
+                message "&6Disabled chat sound effects."
+        if arg-1 is "help":
+            message "&6&l----------[{@prefix}{@name}&6]----------"
+            message " "
+            message "&c&lVersion of plugin: &6{@version}"
+            message " "
+            message "&2Skript by KeirLoire"
+            message "&6&l----------&6[&3USER&6]&6----------"
+            message "&c/sfx &6- to toggle mute chat sound effects."
+            message "&c/sfx list &6- lists all chat sfx."
+            message "&6&l----------&6[&3ADMIN&6]&6----------"
+            message "&c/sfx set <name> <sound>&6- Add/Set chat sfx."
+            message "&c/sfx remove <name> <sound>&6- Remove chat sfx."
+        else if arg-1 is "set":
+            if arg-2 is set:
+                if arg-3 is set:
+                    set {chat.sfx::%arg-2%} to arg-3
+                    message "&eAdded %arg-2% chat effect."
+                else:
+                    message "&4/sfx set <name> <sound>"
+            else:
+                message "&4/sfx set <name> <sound>"
+        else if arg-1 is "remove":
+            if arg-2 is set:
+                clear {chat.sfx::%arg-2%}
+                message "&eRemoved %arg-2% chat effect."
+            else:
+                message "&4/sfx remove <name> "
+        else if arg-1 is "list":
+            set {_page} to 1
+            if arg-2 is set:
+                set {_page} to arg-2 parsed as an integer
+            set {_skip} to (45 * {_page})
+            open virtual chest inventory with size 6 named "{@prefix}{@name}" to player
+            set {_slot} to 0
+            loop {chat.sfx::*}:
+                if {_slot} is 45:
+                    stop loop
+                if {_skip} is more than 45:
+                    add -1 to {_skip}
+                else:
+                    set {_icon} to music disc named loop-index with lore loop-value
+                make a gui slot {_slot} of player with {_icon} to close then execute player command "/playersay %loop-index%"
+                add 1 to {_slot}
+            if {_skip} is more than 45:
+                make a gui slot 52 of player with gray_stained_glass_pane named "&7Next Page" to close then execute player command "/sfx list %{_page} + 1%"
+            if (arg-2 parsed as integer) is more than 1:
+                make a gui slot 46 of player with gray_stained_glass_pane named "&7Previous Page" to close then execute player command "/sfx list %{_page} - 1%"
+        else:
+            loop players:
+                if {soundeffect.mute::%loop-player%} is not set:
+                    play sound "%arg-1%" at location of loop-player for loop-player
+
+
+command /playersay [<text>]:
+    trigger:
+        make player say arg-1
